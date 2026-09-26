@@ -298,7 +298,7 @@ $("copy").onclick = async () => {
     board();
     const readBack = boundTo(mine, M.SY) ? "YES" : "NO";
     $("copyOut").innerHTML = `<div class="out">
-      <div class="k">Leader by verified record</div><div class="v" style="color:var(--vi)">${L}</div>
+      <div class="k">Leader when you copied, by verified record</div><div class="v" style="color:var(--vi)">${L}</div>
       <div class="k">Their position on ${M.id}, recovered from their signature</div>
       <div class="v"><span class="pill ${their.secret === "YES" ? "yes" : "no"}">${their.secret}</span></div>
       <div class="k">Your signature, built against the same point</div>
