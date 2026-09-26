@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="ory-verify" content="PASTE_COATTAIL_TOKEN_HERE">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Track records nobody can fake. Read a trader's position straight off their signature, then copy it. A working Discreet Log Contract in the browser.">
+<meta name="twitter:creator" content="@faruukku">
+<link rel="me" href="https://x.com/faruukku">
+<link rel="icon" href="/logo.png">
+<meta property="og:title" content="Coattail — track records nobody can fake">
+<meta property="og:description" content="A trader's position is readable from their signature. So the record cannot be invented, and the good ones can be copied.">
+<title>Coattail — track records nobody can fake</title>
+<style>
+  :root{
+    --bg:#0c0f0e; --panel:#141917; --line:#242c29; --ink:#e7edea; --mut:#87938d;
+    --em:#2fbf7e; --vi:#8b7cf6; --amber:#e0a33c; --red:#e5596b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.65 ui-sans-serif,-apple-system,"Segoe UI",Roboto,sans-serif;padding:0 20px}
+  .wrap{max-width:920px;margin:0 auto;padding-block:44px 80px}
+  header{border-bottom:1px solid var(--line);padding-bottom:22px;margin-bottom:26px}
+  h1{font-size:31px;margin:0 0 6px;letter-spacing:-.02em}
+  h1 span{color:var(--em)}
+  .sub{color:var(--mut);margin:0}
+  h2{font-size:12px;text-transform:uppercase;letter-spacing:.13em;color:var(--mut);
+     margin:34px 0 11px;font-family:ui-monospace,Menlo,monospace}
+  h2 b{color:var(--em);font-weight:600}
+  p{margin:0 0 13px}
+  .lede{font-size:17px;color:#ccd5d1}
+  .note{color:var(--mut);font-size:13px}
+  code{font-family:ui-monospace,Menlo,monospace;font-size:12.5px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:18px;margin-bottom:12px}
+  button{font:inherit;font-size:14px;padding:9px 16px;border-radius:7px;cursor:pointer;
+    background:var(--em);color:#04160d;border:none;font-weight:600}
+  button:hover{filter:brightness(1.08)}
+  button.g{background:transparent;color:var(--vi);border:1px solid var(--line);font-weight:400}
+  button:disabled{opacity:.38;cursor:not-allowed}
+  .row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+  .out{margin-top:13px;padding:13px;background:#090c0b;border:1px solid var(--line);
+    border-radius:8px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px;word-break:break-all}
+  .k{color:var(--mut);font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px}
+  .v{margin-bottom:11px}.v:last-child{margin-bottom:0}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:10px 9px;border-bottom:1px solid var(--line);vertical-align:middle}
+  th{color:var(--mut);font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:500;white-space:nowrap}
+  td.m{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;word-break:break-all}
+  .pill{display:inline-block;font-family:ui-monospace,Menlo,monospace;font-size:11px;
+    padding:3px 9px;border-radius:20px;border:1px solid var(--line);white-space:nowrap}
+  .pill.yes{border-color:var(--em);color:var(--em)}
+  .pill.no{border-color:var(--red);color:var(--red)}
+  .pill.win{background:rgba(47,191,126,.13);border-color:var(--em);color:var(--em)}
+  .pill.loss{background:rgba(229,89,107,.11);border-color:var(--red);color:var(--red)}
+  .lead{background:rgba(139,124,246,.08)}
+  .err{background:rgba(229,89,107,.1);border:1px solid rgba(229,89,107,.34);color:#ffb9c1;
+    border-radius:8px;padding:11px;font-size:13.5px;margin-top:11px}
+  .scroll{overflow-x:auto}
+  footer{margin-top:50px;padding-top:20px;border-top:1px solid var(--line);color:var(--mut);font-size:13.5px}
+  a{color:var(--vi)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Coat<span>tail</span></h1>
+  <p class="sub">Track records nobody can fake. Then ride the good ones.</p>
+</header>
+
+<p class="lede">
+  Copy trading fails on one problem: the record is self-reported. Anyone can claim a hit rate,
+  delete the losses, or show you a screenshot. Coattail removes the claim entirely. A trader's
+  position is readable straight off their signature, so the record is something you compute, not
+  something you are told.
+</p>
+<p class="note">
+  Built on Discreet Log Contracts. Everything here runs in this tab: BIP-340 oracle attestation,
+  anticipation points, and adaptor signatures whose bound outcome an observer can recover. No
+  server, no node, no wallet.
+</p>
+
+<h2><b>1</b> · Open a market</h2>
+<p class="note">
+  An oracle announces a question it will later answer, and nothing else. Two outcomes.
+</p>
+<div class="panel">
+  <div class="row">
+    <button id="open">Open a market</button>
+    <span class="note" id="mkt"></span>
+  </div>
+  <div id="mktOut"></div>
+</div>
+
+<h2><b>2</b> · Three traders take a position</h2>
+<p class="note">
+  Each picks a side privately and publishes only an adaptor signature. They tell you nothing.
+  The table below is what an observer can work out anyway, by testing the signature against each
+  outcome's anticipation point. Exactly one will verify.
+</p>
+<div class="panel">
+  <div class="row"><button id="take" disabled>Let them take positions</button></div>
+  <div id="posOut"></div>
+</div>
+
+<h2><b>3</b> · The market resolves</h2>
+<p class="note">
+  The oracle publishes one number. Every position settles against it, and the record updates
+  itself. Nobody reports anything.
+</p>
+<div class="panel">
+  <div class="row">
+    <button id="resYes" disabled>Resolve YES</button>
+    <button id="resNo" disabled>Resolve NO</button>
+  </div>
+  <div id="resOut"></div>
+</div>
+
+<h2><b>4</b> · The leaderboard, and riding it</h2>
+<p class="note">
+  Run several markets and a record accumulates that no one authored. Then copy the leader: take
+  the same side they took on the open market, by building your own signature against the same
+  point.
+</p>
+<div class="panel">
+  <div id="board"><p class="note">Resolve a market first.</p></div>
+  <div class="row" style="margin-top:12px"><button class="g" id="copy" disabled>Copy the leader on a new market</button></div>
+  <div id="copyOut"></div>
+</div>
+
+<h2>What is actually being trusted</h2>
+<p>
+  The oracle, to answer the question honestly. Nothing else. Not the traders, who cannot
+  misreport a position they never reported. Not a platform, which holds nothing and could not
+  edit the record if it wanted to. The record is a function of signatures anyone can recompute.
+</p>
+<p class="note">
+  Implemented: BIP-340 oracle attestation, anticipation point derivation, adaptor signature
+  creation, recovery of the bound outcome by an observer, settlement, and record accumulation.
+  Not implemented: funding transactions, CET construction, broadcast, and multi-outcome markets.
+  This page proves the mechanism; it does not move coins.
+</p>
+
+<footer>
+  <p><a href="https://github.com/Leihyn/coattail">Source</a> · <a href="https://x.com/faruukku">@faruukku</a></p>
+  <p class="note">Demonstration keys. Do not paste a key that holds funds.</p>
+</footer>
+
+</div>
+
+<script type="module">
+import { ProjectivePoint as P } from './secp256k1.js';
+const N = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141n, G = P.BASE;
+const $ = s => document.getElementById(s);
+const b2h = b => [...b].map(x => x.toString(16).padStart(2, "0")).join("");
+const h2b = h => Uint8Array.from(h.match(/.{1,2}/g).map(x => parseInt(x, 16)));
+const cat = (...a) => { const t = new Uint8Array(a.reduce((n, x) => n + x.length, 0)); let o = 0; for (const x of a) { t.set(x, o); o += x.length; } return t; };
+const sha = async b => new Uint8Array(await crypto.subtle.digest("SHA-256", b));
+const tagged = async (t, m) => { const h = await sha(new TextEncoder().encode(t)); return sha(cat(h, h, m)); };
+const mod = x => ((x % N) + N) % N, b2n = b => BigInt("0x" + b2h(b));
+const xonly = p => h2b(p.toHex(true).slice(2)), liftx = x => P.fromHex("02" + b2h(x));
+const even = d => { const p = G.mul(mod(d)); return (p.toAffine().y & 1n) === 0n ? [mod(d), p] : [mod(N - d), G.mul(mod(N - d))]; };
+const enc = s => new TextEncoder().encode(s);
+const rnd = () => { const b = new Uint8Array(32); crypto.getRandomValues(b); return b2n(b) % N; };
+const cut = (h, n = 18) => h.slice(0, n) + "…";
+
+const QUESTIONS = [
+  "Will the next block be found in under 6 minutes?",
+  "Will the mempool clear below 5 vMB this week?",
+  "Will difficulty adjust upward at the next epoch?",
+  "Will hashrate set a new all-time high this month?",
+];
+const YES = "OUTCOME_YES", NO = "OUTCOME_NO";
+const TRADERS = ["Ravel", "Okonjo", "Sandoval"];
+let M = null, round = 0;
+const record = Object.fromEntries(TRADERS.map(t => [t, { w: 0, l: 0 }]));
+const seats = () => TRADERS.concat(record.you ? ["you"] : []);
+
+const chal = async (R, Pp, m) => b2n(await tagged("BIP0340/challenge", cat(xonly(R), xonly(Pp), enc(m))));
+async function antic(m) { const e = await chal(M.R, M.P, m); return liftx(xonly(M.R)).add(liftx(xonly(M.P)).mul(mod(e))); }
+async function attest(m) { const e = await chal(M.R, M.P, m); return mod(M.k + mod(e * M.x)); }
+
+// An observer holds only (Ra, sa, Y, msg). Testing a candidate point recovers the position.
+function boundTo(pos, cand) {
+  return G.mul(pos.sa).toHex(true) === pos.Ra.add(cand.negate()).add(pos.Y.mul(mod(pos.e))).toHex(true);
+}
+
+async function makePosition(side, label) {
+  const y = rnd(), Y = G.mul(y), r = rnd();
+  const T = side === "YES" ? M.SY : M.SN;
+  const Ra = G.mul(r).add(T);
+  const msg = "coattail:" + M.id + ":" + label;
+  const e = await chal(Ra, Y, msg);
+  return { y, Y, r, Ra, e, sa: mod(r + mod(e * y)), secret: side, label };
+}
+
+$("open").onclick = async () => {
+  const [x, Pp] = even(rnd()), [k, Rp] = even(rnd());
+  M = { x, P: Pp, k, R: Rp, id: "market-" + (++round), q: QUESTIONS[(round - 1) % QUESTIONS.length] };
+  M.SY = await antic(YES); M.SN = await antic(NO);
+  M.positions = null; M.resolved = null;
+  $("mkt").textContent = M.id;
+  $("mktOut").innerHTML = `<div class="out">
+    <div class="k">The question</div><div class="v" style="color:var(--ink)">${M.q}</div>
+    <div class="k">Oracle public key</div><div class="v">${b2h(xonly(M.P))}</div>
+    <div class="k">Anticipation point, YES</div><div class="v">${cut(M.SY.toHex(true), 40)}</div>
+    <div class="k">Anticipation point, NO</div><div class="v">${cut(M.SN.toHex(true), 40)}</div></div>`;
+  $("take").disabled = false; $("resYes").disabled = true; $("resNo").disabled = true;
+  $("copy").disabled = true; $("posOut").innerHTML = ""; $("resOut").innerHTML = ""; $("copyOut").innerHTML = "";
+};
+
+$("take").onclick = async () => {
+  try {
+    M.positions = [];
+    for (const t of TRADERS) {
+      const side = Math.random() < 0.5 ? "YES" : "NO";     // chosen privately
+      M.positions.push(await makePosition(side, t));
+    }
+    $("posOut").innerHTML = `<div class="scroll"><table>
+      <tr><th>Trader</th><th>Published signature</th><th>Tests against YES</th><th>Tests against NO</th><th>Recovered position</th></tr>
+      ${M.positions.map(p => {
+        const y = boundTo(p, M.SY), n = boundTo(p, M.SN);
+        const read = y ? "YES" : n ? "NO" : "unreadable";
+        return `<tr><td>${p.label}</td><td class="m">${cut(p.sa.toString(16).padStart(64, "0"), 20)}</td>
+          <td class="m" style="color:${y ? "var(--em)" : "var(--mut)"}">${y}</td>
+          <td class="m" style="color:${n ? "var(--em)" : "var(--mut)"}">${n}</td>
+          <td><span class="pill ${read === "YES" ? "yes" : "no"}">${read}</span></td></tr>`;
+      }).join("")}
+    </table></div>
+    <p class="note" style="margin-top:11px">Nobody declared a side. Each position was recovered by
+    testing the signature against the two points from step 1, and exactly one verifies in every
+    case.</p>`;
+    $("resYes").disabled = false; $("resNo").disabled = false;
+  } catch (e) { $("posOut").innerHTML = `<div class="err">${e.message}</div>`; }
+};
+
+async function resolve(winner) {
+  try {
+    const msg = winner === "YES" ? YES : NO;
+    const s = await attest(msg);
+    const point = winner === "YES" ? M.SY : M.SN;
+    const proof = G.mul(s).toHex(true) === point.toHex(true);
+    for (const p of M.positions) {
+      const full = mod(p.sa + s);
+      const paid = G.mul(full).toHex(true) === p.Ra.add(p.Y.mul(mod(p.e))).toHex(true);
+      p.paid = paid;
+      (record[p.label] ??= { w: 0, l: 0 })[paid ? "w" : "l"]++;
+    }
+    M.resolved = winner;
+    $("resOut").innerHTML = `<div class="out">
+      <div class="k">Oracle published</div><div class="v">${s.toString(16).padStart(64, "0")}</div>
+      <div class="k">Matches the precomputed ${winner} point?</div>
+      <div class="v" style="color:${proof ? "var(--em)" : "var(--red)"}">${proof ? "yes" : "no"}</div></div>
+      <div class="scroll" style="margin-top:12px"><table>
+      <tr><th>Trader</th><th>Held</th><th>Settlement</th></tr>
+      ${M.positions.map(p => `<tr><td>${p.label}</td>
+        <td><span class="pill ${p.secret === "YES" ? "yes" : "no"}">${p.secret}</span></td>
+        <td><span class="pill ${p.paid ? "win" : "loss"}">${p.paid ? "completes, paid" : "stays locked"}</span></td></tr>`).join("")}
+      </table></div>`;
+    $("resYes").disabled = true; $("resNo").disabled = true;
+    board();
+  } catch (e) { $("resOut").innerHTML = `<div class="err">${e.message}</div>`; }
+}
+$("resYes").onclick = () => resolve("YES");
+$("resNo").onclick = () => resolve("NO");
+
+function leader() {
+  return TRADERS.slice().sort((a, b) => {
+    const ra = record[a], rb = record[b];
+    const pa = ra.w + ra.l ? ra.w / (ra.w + ra.l) : 0, pb = rb.w + rb.l ? rb.w / (rb.w + rb.l) : 0;
+    return pb - pa || rb.w - ra.w;
+  })[0];
+}
+function board() {
+  const L = leader();
+  $("board").innerHTML = `<div class="scroll"><table>
+    <tr><th>Trader</th><th>Won</th><th>Lost</th><th>Hit rate</th><th></th></tr>
+    ${seats().map(t => { const r = record[t], n = r.w + r.l;
+      return `<tr class="${t === L ? "lead" : ""}"><td>${t === "you" ? "you (copied)" : t}</td><td>${r.w}</td><td>${r.l}</td>
+        <td>${n ? Math.round(100 * r.w / n) + "%" : "—"}</td>
+        <td>${t === L && n ? '<span class="pill" style="border-color:var(--vi);color:var(--vi)">leader</span>' : ""}</td></tr>`;
+    }).join("")}
+  </table></div>
+  <p class="note" style="margin-top:11px">Computed from signatures and one oracle number per
+  market. No trader submitted any of it.</p>`;
+  $("copy").disabled = false;
+}
+
+$("copy").onclick = async () => {
+  try {
+    const L = leader();
+    await $("open").onclick();
+    await $("take").onclick();
+    const their = M.positions.find(p => p.label === L);
+    const mine = await makePosition(their.secret, "you");
+    record.you ??= { w: 0, l: 0 };
+    M.positions.push(mine);
+    board();
+    const readBack = boundTo(mine, M.SY) ? "YES" : "NO";
+    $("copyOut").innerHTML = `<div class="out">
+      <div class="k">Leader by verified record</div><div class="v" style="color:var(--vi)">${L}</div>
+      <div class="k">Their position on ${M.id}, recovered from their signature</div>
+      <div class="v"><span class="pill ${their.secret === "YES" ? "yes" : "no"}">${their.secret}</span></div>
+      <div class="k">Your signature, built against the same point</div>
+      <div class="v">${cut(mine.sa.toString(16).padStart(64, "0"), 40)}</div>
+      <div class="k">What an observer reads off yours</div>
+      <div class="v"><span class="pill ${readBack === "YES" ? "yes" : "no"}">${readBack}</span>
+        ${readBack === their.secret ? '<span class="pill win" style="margin-left:7px">matches the leader</span>' : '<span class="pill loss" style="margin-left:7px">mismatch</span>'}</div>
+    </div>
+    <p class="note" style="margin-top:11px">You copied a position nobody told you about, on a
+    market opened after the record was earned. Resolve above to score this round.</p>`;
+  } catch (e) { $("copyOut").innerHTML = `<div class="err">${e.message}</div>`; }
+};
+
+if (new URLSearchParams(location.search).has("demo")) {
+  const run = async (w) => { await $("open").onclick(); await $("take").onclick(); await resolve(w); };
+  await run("YES"); await run("NO"); await run("YES");
+  await $("copy").onclick();
+}
+</script>
+</body>
+</html>
